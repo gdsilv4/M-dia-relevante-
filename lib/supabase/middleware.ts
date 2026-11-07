@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSupabaseEnv } from '@/lib/supabase/env'
+import type { CookieParaGravar } from '@/lib/types'
 
 // Renova a sessão a cada requisição e protege todas as páginas:
 // sem login, qualquer endereço leva para /login.
@@ -24,7 +25,7 @@ export async function updateSession(request: NextRequest) {
       getAll() {
         return request.cookies.getAll()
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: CookieParaGravar[]) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
         response = NextResponse.next({ request })
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))

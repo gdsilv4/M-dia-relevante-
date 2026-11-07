@@ -44,7 +44,7 @@ export function LoginForm({ configurado }: { configurado: boolean }) {
           <button
             type="button"
             className="btn-texto"
-            onClick={() => setMostrarSenha((v) => !v)}
+            onClick={() => setMostrarSenha((v: boolean) => !v)}
             aria-pressed={mostrarSenha}
           >
             {mostrarSenha ? 'Ocultar' : 'Mostrar'}

@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { getSupabaseEnv } from '@/lib/supabase/env'
+import type { CookieParaGravar } from '@/lib/types'
 
 // Cliente do Supabase para uso no servidor (páginas, layouts e ações).
 // A sessão fica em cookies; as regras de acesso do banco (RLS) valem para este cliente.
@@ -17,7 +18,7 @@ export async function createClient() {
       getAll() {
         return cookieStore.getAll()
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: CookieParaGravar[]) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
         } catch {
