@@ -6,6 +6,7 @@ import { getSupabaseEnv } from '@/lib/supabase/env'
 import { signOut } from '@/app/actions/auth'
 
 export const metadata: Metadata = { title: 'Sem acesso' }
+export const dynamic = 'force-dynamic'
 
 export default async function SemAcessoPage() {
   if (!getSupabaseEnv()) redirect('/login')

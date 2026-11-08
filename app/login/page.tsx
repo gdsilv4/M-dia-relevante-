@@ -5,6 +5,8 @@ import { getSupabaseEnv } from '@/lib/supabase/env'
 import { LoginForm } from './login-form'
 
 export const metadata: Metadata = { title: 'Entrar' }
+// O aviso "Supabase não configurado" precisa refletir o ambiente real, não o do momento do build.
+export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   const configurado = getSupabaseEnv() !== null

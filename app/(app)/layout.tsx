@@ -5,6 +5,9 @@ import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseEnv } from '@/lib/supabase/env'
 import { primeiroNome } from '@/lib/format'
 
+// Toda a área logada depende do usuário de cada requisição: nunca gerar de forma estática.
+export const dynamic = 'force-dynamic'
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   if (!getSupabaseEnv()) redirect('/login')
 

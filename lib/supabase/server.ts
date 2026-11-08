@@ -6,12 +6,14 @@ import type { CookieParaGravar } from '@/lib/types'
 // Cliente do Supabase para uso no servidor (páginas, layouts e ações).
 // A sessão fica em cookies; as regras de acesso do banco (RLS) valem para este cliente.
 export async function createClient() {
+  // cookies() vem primeiro: ele avisa o Next.js que esta página depende de cada requisição
+  // e, portanto, não pode ser gerada de forma estática durante o build.
+  const cookieStore = await cookies()
+
   const env = getSupabaseEnv()
   if (!env) {
     throw new Error('Supabase não configurado: defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.')
   }
-
-  const cookieStore = await cookies()
 
   return createServerClient(env.url, env.key, {
     cookies: {

@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { dataPorExtenso, primeiroNome, saudacao } from '@/lib/format'
 
 export const metadata: Metadata = { title: 'Início' }
+export const dynamic = 'force-dynamic'
 
 const SECOES = [
   { titulo: 'Esta semana', texto: 'Nenhum evento nesta semana.' },
