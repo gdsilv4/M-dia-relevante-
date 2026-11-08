@@ -531,3 +531,127 @@ input {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ---------- Equipe e escala ---------- */
+.campo select,
+.campo textarea {
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 14px;
+  font-size: 16px;
+  color: var(--tinta);
+  background: var(--branco);
+  border: 1.5px solid var(--linha);
+  border-radius: 14px;
+  outline: none;
+}
+
+.campo select:focus,
+.campo textarea:focus {
+  border-color: var(--azul-intenso);
+  box-shadow: 0 0 0 4px var(--azul-suave);
+}
+
+.form-card {
+  margin-bottom: 14px;
+}
+
+.form-card h2 {
+  margin-bottom: 0;
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.date-filter {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.date-filter .campo {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: var(--creme);
+  border: 1px solid var(--linha);
+  border-radius: 14px;
+}
+
+.member-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.member-row strong {
+  overflow-wrap: anywhere;
+  color: var(--azul-marinho);
+}
+
+.member-row span {
+  color: var(--tinta-suave);
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.btn-compact {
+  width: auto;
+  min-height: 42px;
+  flex: none;
+  padding: 0 14px;
+  font-size: 0.88rem;
+}
+
+.btn-link {
+  width: auto;
+  min-height: 44px;
+  margin-top: 14px;
+  text-decoration: none;
+}
+
+.success-notice {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  color: #175b36;
+  background: #e7f5ec;
+  border-radius: 12px;
+}
+
+.form-aviso {
+  margin-bottom: 14px;
+}
+
+@media (min-width: 700px) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .form-grid .btn-primario {
+    grid-column: 1 / -1;
+    justify-self: start;
+    width: auto;
+  }
+}
