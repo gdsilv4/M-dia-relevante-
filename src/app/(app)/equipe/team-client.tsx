@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { inviteUser, resetPassword, updateMember } from "@/app/actions/team";
+import { approveRequest, inviteUser, rejectRequest, resetPassword, updateMember } from "@/app/actions/team";
 import { useApp } from "@/components/app-provider";
 import { IconPlus } from "@/components/icons";
 import { Avatar, Badge, Modal } from "@/components/ui";
 import { ASSIGNABLE_ROLES, ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/permissions";
-import type { Profile, RoleKey } from "@/lib/types";
+import { timeAgo } from "@/lib/dates";
+import type { AccessRequest, Profile, RoleKey } from "@/lib/types";
 
 function tempPassword(): string {
   const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -16,12 +17,13 @@ function tempPassword(): string {
   return Array.from(bytes, (b) => chars[b % chars.length]).join("");
 }
 
-export default function TeamClient({ members }: { members: Profile[] }) {
+export default function TeamClient({ members, requests }: { members: Profile[]; requests: AccessRequest[] }) {
   const { profile, toast } = useApp();
   const router = useRouter();
   const [invite, setInvite] = useState(false);
   const [reset, setReset] = useState<Profile | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [approving, setApproving] = useState<AccessRequest | null>(null);
 
   async function patch(m: Profile, p: { role_key?: RoleKey; is_active?: boolean }) {
     setBusyId(m.id);
@@ -43,6 +45,42 @@ export default function TeamClient({ members }: { members: Profile[] }) {
           <IconPlus /> Adicionar pessoa
         </button>
       </div>
+
+      {requests.length > 0 && (
+        <section className="card" style={{ marginBottom: 16, borderLeft: "4px solid var(--blue)" }}>
+          <div className="card-head">
+            <h2>Solicitações de acesso <span className="badge">{requests.length}</span></h2>
+          </div>
+          <div className="list">
+            {requests.map((q) => (
+              <div className="list-item" key={q.id} style={{ cursor: "default", flexWrap: "wrap" }}>
+                <Avatar name={q.full_name} />
+                <div className="grow">
+                  <div className="t">{q.full_name}</div>
+                  <div className="meta"><span>{q.email}</span><span>{timeAgo(q.created_at)}</span></div>
+                  {q.message && <p className="small muted" style={{ marginTop: 4 }}>{q.message}</p>}
+                </div>
+                <div className="actions">
+                  <button className="btn sm" type="button" onClick={() => setApproving(q)}>Aprovar</button>
+                  <button
+                    className="btn danger sm"
+                    type="button"
+                    onClick={async () => {
+                      if (!confirm(`Recusar o pedido de ${q.full_name}?`)) return;
+                      const r = await rejectRequest(q.id);
+                      if ("error" in r) return toast(r.error, "error");
+                      toast("Solicitação recusada.", "success");
+                      router.refresh();
+                    }}
+                  >
+                    Recusar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="card table-wrap">
         <table>
@@ -118,6 +156,7 @@ export default function TeamClient({ members }: { members: Profile[] }) {
       </div>
 
       {invite && <InviteModal onClose={() => setInvite(false)} />}
+      {approving && <ApproveModal req={approving} onClose={() => setApproving(null)} />}
       {reset && <ResetModal member={reset} onClose={() => setReset(null)} />}
     </>
   );
@@ -255,6 +294,74 @@ function ResetModal({ member, onClose }: { member: Profile; onClose: () => void 
           </div>
           {error && <p className="err" role="alert">{error}</p>}
         </div>
+      )}
+    </Modal>
+  );
+}
+
+function ApproveModal({ req, onClose }: { req: AccessRequest; onClose: () => void }) {
+  const { toast } = useApp();
+  const router = useRouter();
+  const [role, setRole] = useState<RoleKey>("colaborador");
+  const [password, setPassword] = useState(tempPassword());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  async function save() {
+    setError(null);
+    setBusy(true);
+    const r = await approveRequest({ id: req.id, role_key: role, password });
+    setBusy(false);
+    if ("error" in r) return setError(r.error);
+    router.refresh();
+    setDone(true);
+  }
+
+  return (
+    <Modal
+      title={done ? "Acesso aprovado" : `Aprovar ${req.full_name}`}
+      onClose={onClose}
+      footer={
+        done ? (
+          <button className="btn" type="button" onClick={onClose}>Concluir</button>
+        ) : (
+          <>
+            <button className="btn secondary" type="button" onClick={onClose}>Cancelar</button>
+            <button className="btn" type="button" onClick={save} disabled={busy}>{busy ? "Criando…" : "Aprovar e criar acesso"}</button>
+          </>
+        )
+      }
+    >
+      {done ? (
+        <>
+          <p>Envie estes dados para <b>{req.full_name}</b> por um canal seguro:</p>
+          <div className="card" style={{ background: "var(--cream)", boxShadow: "none", margin: "12px 0" }}>
+            <div><span className="muted small">E-mail</span><br /><b>{req.email}</b></div>
+            <div style={{ marginTop: 8 }}><span className="muted small">Senha temporária</span><br /><b style={{ fontFamily: "monospace", fontSize: 17 }}>{password}</b></div>
+          </div>
+          <button className="btn secondary sm" type="button" onClick={() => navigator.clipboard?.writeText(`Painel de Mídia\nE-mail: ${req.email}\nSenha temporária: ${password}`).then(() => toast("Copiado.", "success"), () => {})}>Copiar dados</button>
+          <p className="hint" style={{ marginTop: 10 }}>No primeiro acesso ela será obrigada a criar uma senha própria. Esta senha não aparece de novo.</p>
+        </>
+      ) : (
+        <>
+          <p className="muted small" style={{ marginBottom: 12 }}>{req.email}{req.message ? ` · “${req.message}”` : ""}</p>
+          <div className="field">
+            <label htmlFor="a-role">Função</label>
+            <select id="a-role" className="input" value={role} onChange={(e) => setRole(e.target.value as RoleKey)}>
+              {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+            </select>
+            <span className="hint">{ROLE_DESCRIPTIONS[role]}</span>
+          </div>
+          <div className="field">
+            <label htmlFor="a-pw">Senha temporária</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input id="a-pw" className="input" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <button type="button" className="btn secondary" onClick={() => setPassword(tempPassword())}>Gerar</button>
+            </div>
+          </div>
+          {error && <p className="err" role="alert">{error}</p>}
+        </>
       )}
     </Modal>
   );

@@ -139,4 +139,13 @@ export interface Activity {
   created_at: string;
 }
 
+export interface AccessRequest {
+  id: string;
+  full_name: string;
+  email: string;
+  message: string | null;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+}
+
 export type ActionResult = { ok: true; message?: string; data?: Record<string, unknown> } | { error: string };

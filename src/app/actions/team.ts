@@ -83,3 +83,51 @@ export async function resetPassword(id: string, password: string): Promise<Actio
   if ("error" in r) return r;
   return { ok: true, message: "Senha redefinida. A pessoa deverá trocá-la no próximo acesso." };
 }
+
+export async function approveRequest(input: { id: string; role_key: RoleKey; password: string }): Promise<ActionResult> {
+  const ctx = await getCtx();
+  if (!ctx) return NO_SESSION;
+  if (!can.manageTeam(ctx.role)) return NO_PERMISSION;
+  if (!ASSIGNABLE_ROLES.includes(input.role_key)) return { error: "Função inválida." };
+  if (input.password.length < 8) return { error: "A senha temporária precisa ter pelo menos 8 caracteres." };
+
+  const { data: req } = await ctx.supabase
+    .from("access_requests")
+    .select("id,full_name,email,status")
+    .eq("id", input.id)
+    .maybeSingle();
+  if (!req) return { error: "Solicitação não encontrada." };
+  if (req.status !== "pending") return { error: "Esta solicitação já foi analisada." };
+
+  const r = await callAdminFn(ctx, {
+    action: "invite",
+    full_name: req.full_name,
+    email: req.email,
+    password: input.password,
+    role_key: input.role_key,
+  });
+  if ("error" in r) return r;
+
+  await ctx.supabase
+    .from("access_requests")
+    .update({ status: "approved", decided_by: ctx.userId, decided_at: new Date().toISOString() })
+    .eq("id", input.id);
+  revalidatePath("/equipe");
+  return { ok: true, message: "Acesso aprovado." };
+}
+
+export async function rejectRequest(id: string): Promise<ActionResult> {
+  const ctx = await getCtx();
+  if (!ctx) return NO_SESSION;
+  if (!can.manageTeam(ctx.role)) return NO_PERMISSION;
+  const { data, error } = await ctx.supabase
+    .from("access_requests")
+    .update({ status: "rejected", decided_by: ctx.userId, decided_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("status", "pending")
+    .select("id");
+  if (error) return { error: friendly(error.message) };
+  if (!data?.length) return { error: "Solicitação não encontrada ou já analisada." };
+  revalidatePath("/equipe");
+  return { ok: true, message: "Solicitação recusada." };
+}

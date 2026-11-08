@@ -7,7 +7,7 @@ import { deleteEvent, saveEvent } from "@/app/actions/events";
 import { useApp } from "@/components/app-provider";
 import ContentModal from "@/components/content-modal";
 import { IconChevronL, IconChevronR, IconPlus } from "@/components/icons";
-import { Badge, Modal, memberName } from "@/components/ui";
+import { Avatar, Badge, Modal, memberName } from "@/components/ui";
 import {
   WEEKDAYS_SHORT,
   addDays,
@@ -190,8 +190,13 @@ export default function CalendarClient({
     <>
       <div className="page-head">
         <div>
-          <h1>Calendário</h1>
-          <p>Planejamento editorial da mídia.</p>
+          <h1><span className="live-dot" /> Calendário editorial</h1>
+          <p>Planejamento da mídia da Igreja Relevante.</p>
+        </div>
+        <div className="avatars" aria-label="Equipe">
+          {lookups.team.slice(0, 4).map((m) => (
+            <Avatar key={m.id} small name={m.full_name || "?"} />
+          ))}
         </div>
         <div className="actions">
           {can.manageEvents(profile.role_key) && (
@@ -218,9 +223,9 @@ export default function CalendarClient({
         <Link className="btn secondary sm" href={href({ d: today })} prefetch={false}>
           Hoje
         </Link>
-        <div className="seg" style={{ marginLeft: "auto" }}>
+        <div className="view-tabs" style={{ marginLeft: "auto" }}>
           {(["mes", "semana", "dia"] as View[]).map((v) => (
-            <Link key={v} href={href({ v })} className={view === v ? "on" : ""} prefetch={false} style={{ padding: "8px 14px", fontWeight: 600, fontSize: 13 }}>
+            <Link key={v} href={href({ v })} className={view === v ? "on" : ""} prefetch={false}>
               {v === "mes" ? "Mês" : v === "semana" ? "Semana" : "Dia"}
             </Link>
           ))}
@@ -280,9 +285,23 @@ export default function CalendarClient({
       )}
 
       {view === "dia" && (
-        <div className="card">
+        <div>
+          <div className="day-strip" role="tablist" aria-label="Dias da semana">
+            {Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(date), i)).map((day) => {
+              const d = parseISO(day);
+              const count = (byDay.get(day) ?? []).length;
+              return (
+                <Link key={day} href={href({ v: "dia", d: day })} prefetch={false} className={`day-pill${day === date ? " on" : ""}${day === today ? " today" : ""}`}>
+                  <b>{d.getDate()}</b>
+                  <span>{WEEKDAYS_SHORT[d.getDay()]}</span>
+                  {count > 0 && <i className="day-count">{count}</i>}
+                </Link>
+              );
+            })}
+          </div>
+
           {(byDay.get(date) ?? []).length === 0 && eventsOn(date).length === 0 && designsOn(date).length === 0 ? (
-            <div className="empty">
+            <div className="card empty">
               <b>Nada planejado para este dia</b>
               {canCreate && (
                 <button className="btn" style={{ marginTop: 12 }} type="button" onClick={() => setModal({ content: null, date })}>
@@ -291,39 +310,36 @@ export default function CalendarClient({
               )}
             </div>
           ) : (
-            <div className="list">
+            <div className="tcards">
               {eventsOn(date).map((ev) => (
-                <button key={ev.id} className="list-item" type="button" onClick={() => setEventModal({ event: ev })}>
-                  <div className="grow">
-                    <div className="t">◆ {ev.title}</div>
-                    <div className="meta"><span>Evento</span>{ev.description && <span>{ev.description}</span>}</div>
-                  </div>
+                <button key={ev.id} className="tcard" type="button" onClick={() => setEventModal({ event: ev })}>
+                  <span className="tag" style={{ background: "var(--navy)" }}>Evento</span>
+                  <b className="tt">{ev.title}</b>
+                  {ev.description && <p className="td">{ev.description}</p>}
                 </button>
               ))}
               {(byDay.get(date) ?? []).map((c) => {
                 const f = formatOf(c.format_key);
                 const st = statusOf(c.status_key);
                 return (
-                  <button key={c.id} className="list-item" type="button" onClick={() => setModal({ content: c })}>
-                    <i style={{ width: 6, alignSelf: "stretch", borderRadius: 3, background: f?.color }} />
-                    <div className="grow">
-                      <div className="t">{c.title}</div>
-                      <div className="meta">
-                        <span>{f?.name}</span>
-                        {c.scheduled_time && <span>{formatTime(c.scheduled_time)}</span>}
-                        <span>{memberName(lookups.team, c.assignee_id)}</span>
-                      </div>
+                  <button key={c.id} className="tcard" type="button" onClick={() => setModal({ content: c })}>
+                    <div className="tcard-top">
+                      <span className="tag" style={{ background: f?.color }}>{f?.name}</span>
+                      <Badge color={st?.color}>{st?.name}</Badge>
                     </div>
-                    <Badge color={st?.color}>{st?.name}</Badge>
+                    <b className="tt">{c.title}</b>
+                    {c.description && <p className="td">{c.description}</p>}
+                    <div className="tfoot">
+                      <span className="muted small">{c.scheduled_time ? formatTime(c.scheduled_time) : "Sem horário"}</span>
+                      <span className="who"><Avatar small name={memberName(lookups.team, c.assignee_id, "?")} /> <span className="small">{memberName(lookups.team, c.assignee_id)}</span></span>
+                    </div>
                   </button>
                 );
               })}
               {designsOn(date).map((d) => (
-                <Link key={d.id} className="list-item" href="/design">
-                  <div className="grow">
-                    <div className="t">🎨 {d.title}</div>
-                    <div className="meta"><span>Prazo de entrega da arte</span></div>
-                  </div>
+                <Link key={d.id} className="tcard" href="/design">
+                  <span className="tag" style={{ background: "#7C3AED" }}>Prazo de arte</span>
+                  <b className="tt">{d.title}</b>
                 </Link>
               ))}
             </div>

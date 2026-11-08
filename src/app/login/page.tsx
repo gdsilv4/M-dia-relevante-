@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { LogoMark } from "@/components/icons";
-import LoginForm from "./login-form";
+import AuthPanel from "./auth-panel";
 
 export const metadata: Metadata = { title: "Entrar" };
 
@@ -18,12 +18,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </section>
       <section className="login-form">
         <div className="login-box">
-          <h2>Entrar</h2>
+          <h2>Painel de Mídia</h2>
           <p className="muted">Acesso restrito à equipe de mídia.</p>
-          <LoginForm next={safeNext} />
-          <p className="small muted" style={{ marginTop: 18 }}>
-            Não há cadastro público. Se precisa de acesso, fale com o administrador.
-          </p>
+          <AuthPanel next={safeNext} />
         </div>
       </section>
     </div>

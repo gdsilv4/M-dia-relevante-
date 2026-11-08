@@ -29,7 +29,7 @@ interface Item {
 }
 
 export default function Nav({ avatarUrl }: { avatarUrl: string | null }) {
-  const { profile } = useApp();
+  const { profile, lookups } = useApp();
   const pathname = usePathname();
   const [sheet, setSheet] = useState(false);
   const role = profile.role_key;
@@ -70,6 +70,33 @@ export default function Nav({ avatarUrl }: { avatarUrl: string | null }) {
             </Link>
           ))}
         </nav>
+        <div className="side-sections">
+          <div className="side-title">
+            <span>Equipe</span>
+            {can.manageTeam(role) && <Link href="/equipe" title="Adicionar pessoa">+</Link>}
+          </div>
+          <div className="mini-list">
+            {lookups.team.slice(0, 6).map((m) => (
+              <div className="mini" key={m.id}>
+                <Avatar small name={m.full_name || "?"} />
+                <span>{m.full_name || "Sem nome"}</span>
+              </div>
+            ))}
+            {lookups.team.length > 6 && <span className="mini-more">+{lookups.team.length - 6} pessoas</span>}
+          </div>
+          <div className="side-title" style={{ marginTop: 18 }}><span>Plataformas</span></div>
+          <div className="mini-list">
+            {lookups.platforms.filter((p) => p.is_active).map((p) => (
+              <div className="mini" key={p.key}>
+                <i className="dot" />
+                <span>{p.name}</span>
+              </div>
+            ))}
+          </div>
+          {can.manageTeam(role) && (
+            <Link href="/equipe" className="side-invite">Convidar pessoa</Link>
+          )}
+        </div>
         <div className="me">
           <Link href="/perfil" style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }} title="Meu perfil">
             <Avatar name={profile.full_name || profile.email} url={avatarUrl} />
