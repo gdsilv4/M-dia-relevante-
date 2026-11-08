@@ -51,8 +51,8 @@ export default async function DashboardPage() {
     <div className="dashboard">
       <div className="page-head dashboard-head">
         <div>
-          <h1>{first ? `Olá, ${first}` : "Início"}</h1>
-          <p>{capitalize(monthLabel(today))} · visão geral da mídia</p>
+          <h1>{first ? `Olá, ${first}! 👋` : "Painel de Mídia"}</h1>
+          <p>Aqui está um resumo da operação de mídia da Igreja Relevante.</p>
         </div>
         <div className="actions">
           <Link className="btn" href="/calendario">
