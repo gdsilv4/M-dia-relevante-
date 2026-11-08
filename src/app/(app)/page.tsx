@@ -48,8 +48,8 @@ export default async function DashboardPage() {
   const lateTotal = lateDesign.length + lateContent.length;
 
   return (
-    <>
-      <div className="page-head">
+    <div className="dashboard">
+      <div className="page-head dashboard-head">
         <div>
           <h1>{first ? `Olá, ${first}` : "Início"}</h1>
           <p>{capitalize(monthLabel(today))} · visão geral da mídia</p>
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid cols-4" style={{ marginBottom: 16 }}>
+      <div className="grid cols-4 dashboard-stats" style={{ marginBottom: 16 }}>
         <Link href="/conteudos" className="card stat blue">
           <span className="n">{pending.length}</span>
           <span className="l">Conteúdos pendentes</span>
@@ -96,7 +96,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid cols-2 stack">
+      <div className="grid cols-2 stack dashboard-panels">
         <section className="card">
           <div className="card-head">
             <h2>Próximas publicações</h2>
@@ -229,6 +229,6 @@ export default async function DashboardPage() {
           )}
         </section>
       </div>
-    </>
+    </div>
   );
 }
