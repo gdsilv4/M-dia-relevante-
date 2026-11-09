@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { describeActivity } from "@/lib/activity";
 import { getActivity, getLookups, requireProfile } from "@/lib/data";
-import { capitalize, daysUntil, formatDateBR, formatTime, monthLabel, parseISO, startOfMonth, addMonths, timeAgo, todayISO } from "@/lib/dates";
+import { capitalize, daysUntil, formatDateBR, formatTime, monthGrid, monthLabel, parseISO, startOfMonth, addMonths, timeAgo, todayISO, WEEKDAYS_SHORT } from "@/lib/dates";
 import { createClient } from "@/lib/supabase/server";
 import type { Content, DesignRequest } from "@/lib/types";
 import { Badge, Empty } from "@/components/ui";
-import { IconCalendar } from "@/components/icons";
+import { IconBrush, IconCalendar, IconCheck, IconDoc, IconSend, LogoMark } from "@/components/icons";
 
 export const metadata = { title: "Início" };
 
@@ -47,12 +47,23 @@ export default async function DashboardPage() {
   const first = (profile.full_name || "").trim().split(/\s+/)[0];
   const lateTotal = lateDesign.length + lateContent.length;
 
+  const weeks = monthGrid(today);
+  const byDate = new Map<string, Content[]>();
+  monthContents.forEach((x) => {
+    const k = x.scheduled_date!;
+    byDate.set(k, [...(byDate.get(k) ?? []), x]);
+  });
+  const pct = monthContents.length ? Math.round((publishedMonth.length / monthContents.length) * 100) : 0;
+  const inProgress = monthContents.filter((x) => !["publicado", "agendado", "ideia", "cancelado"].includes(x.status_key)).length;
+  const scheduledN = monthContents.filter((x) => x.status_key === "agendado").length;
+  const ideaN = monthContents.filter((x) => x.status_key === "ideia").length;
+
   return (
     <>
       <div className="page-head">
         <div>
-          <h1>{first ? `Olá, ${first}` : "Início"}</h1>
-          <p>{capitalize(monthLabel(today))} · visão geral da mídia</p>
+          <h1>{first ? `Olá, ${first}! 👋` : "Início"}</h1>
+          <p>Aqui está um resumo da operação de mídia da Igreja Relevante.</p>
         </div>
         <div className="actions">
           <Link className="btn" href="/calendario">
@@ -61,46 +72,61 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid cols-4" style={{ marginBottom: 16 }}>
-        <Link href="/conteudos" className="card stat blue">
-          <span className="n">{pending.length}</span>
-          <span className="l">Conteúdos pendentes</span>
+      <div className="grid cols-4 dash-stats">
+        <Link href="/calendario" className="card stat dark">
+          <span className="si blue"><IconSend /></span>
+          <div><span className="n">{upcoming.length}</span><b>Publicações próximas</b><span className="l">Em aberto à frente</span></div>
         </Link>
-        <Link href="/design" className="card stat">
-          <span className="n">{openDesign.length}</span>
-          <span className="l">Demandas de design abertas</span>
+        <Link href="/conteudos" className="card stat dark hl">
+          <span className="si amber"><IconDoc /></span>
+          <div><span className="n">{pending.length}</span><b>Conteúdos pendentes</b><span className="l">Em planejamento</span></div>
         </Link>
-        <Link href="/design" className="card stat">
-          <span className="n">{inProduction.length}</span>
-          <span className="l">Artes em produção</span>
+        <Link href="/design" className="card stat dark">
+          <span className="si violet"><IconBrush /></span>
+          <div><span className="n">{openDesign.length}</span><b>Demandas de design</b><span className="l">{lateTotal > 0 ? `${lateTotal} atrasada(s)` : "Abertas"}</span></div>
         </Link>
-        <Link href="/design" className="card stat">
-          <span className="n">{awaitingApproval.length}</span>
-          <span className="l">Artes aguardando aprovação</span>
+        <Link href="/conteudos" className="card stat dark">
+          <span className="si green"><IconCheck /></span>
+          <div><span className="n">{publishedMonth.length}</span><b>Publicações do mês</b><span className="l">de {monthContents.length} no mês</span></div>
         </Link>
-        <div className={`card stat${lateTotal > 0 ? " warn" : ""}`}>
-          <span className="n">{lateTotal}</span>
-          <span className="l">Entregas atrasadas</span>
-        </div>
-        <div className="card stat">
-          <span className="n">{publishedMonth.length}</span>
-          <span className="l">Publicados no mês</span>
-        </div>
-        <div className="card stat">
-          <span className="n">{monthContents.length}</span>
-          <span className="l">Conteúdos no mês</span>
-        </div>
-        <div className="card stat">
-          <span className="n">{upcoming.length}</span>
-          <span className="l">Próximas publicações</span>
-        </div>
       </div>
 
-      <div className="grid cols-2 stack">
-        <section className="card">
+      <div className="dash-grid">
+        <section className="card dash-cal">
           <div className="card-head">
-            <h2>Próximas publicações</h2>
-            <Link className="btn ghost sm" href="/calendario">Ver calendário</Link>
+            <h2><IconCalendar className="hi" /> Calendário Editorial</h2>
+            <Link className="btn ghost sm" href="/calendario">Ver calendário completo →</Link>
+          </div>
+          <div className="mini-cal-title">{capitalize(monthLabel(today))}</div>
+          <div className="mini-cal">
+            {WEEKDAYS_SHORT.map((w) => (
+              <div className="mc-h" key={w}>{w}</div>
+            ))}
+            {weeks.flat().map((d) => {
+              const items = byDate.get(d) ?? [];
+              const inMonth = d >= mStart && d < mEnd;
+              return (
+                <Link key={d} href={`/calendario?v=dia&d=${d}`} className={`mc-d${inMonth ? "" : " out"}${d === today ? " today" : ""}`}>
+                  <span className="mc-n">{parseISO(d).getDate()}</span>
+                  {items.slice(0, 2).map((x) => {
+                    const f = formatOf(x.format_key);
+                    return (
+                      <span key={x.id} className="mc-pill" style={{ background: `${f?.color ?? "#2457d6"}22`, color: f?.color ?? "#2457d6" }}>
+                        {x.title}
+                      </span>
+                    );
+                  })}
+                  {items.length > 2 && <span className="mc-more">+{items.length - 2}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="card dash-next">
+          <div className="card-head">
+            <h2><IconSend className="hi" /> Próximas Publicações</h2>
+            <Link className="btn ghost sm" href="/conteudos">Ver todas →</Link>
           </div>
           {upcoming.length === 0 ? (
             <Empty icon={<IconCalendar />} title="Nada agendado à frente">
@@ -133,11 +159,26 @@ export default async function DashboardPage() {
             </div>
           )}
         </section>
+      </div>
+
+      <div className="dash-grid three">
+        <section className="card">
+          <div className="card-head"><h2>Resumo do Mês</h2></div>
+          <div className="donut-wrap">
+            <div className="donut" style={{ background: `conic-gradient(var(--blue) ${pct * 3.6}deg, #e6e9f3 0)` }}>
+              <div><b>{pct}%</b><span>do planejamento</span></div>
+            </div>
+            <ul className="legend-list">
+              <li><i style={{ background: "#2457d6" }} />Publicadas <b>{publishedMonth.length}</b></li>
+              <li><i style={{ background: "#8b5cf6" }} />Agendadas <b>{scheduledN}</b></li>
+              <li><i style={{ background: "#f5a524" }} />Em andamento <b>{inProgress}</b></li>
+              <li><i style={{ background: "#c9cfdf" }} />Ideias <b>{ideaN}</b></li>
+            </ul>
+          </div>
+        </section>
 
         <section className="card">
-          <div className="card-head">
-            <h2>Atrasos e prazos</h2>
-          </div>
+          <div className="card-head"><h2>Atrasos e prazos</h2></div>
           {lateTotal === 0 && openDesign.filter((x) => x.due_date).length === 0 ? (
             <Empty title="Tudo em dia">
               <p className="small">Sem entregas atrasadas ou prazos de design à vista.</p>
@@ -181,32 +222,7 @@ export default async function DashboardPage() {
         </section>
 
         <section className="card">
-          <div className="card-head">
-            <h2>Resumo de {monthLabel(today)}</h2>
-          </div>
-          {monthByStatus.length === 0 ? (
-            <Empty title="Mês sem conteúdos">
-              <p className="small">Os conteúdos com data neste mês aparecem aqui, por status.</p>
-            </Empty>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {monthByStatus.map(({ s, n }) => (
-                <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ width: 130 }} className="small">{s.name}</span>
-                  <div style={{ flex: 1, background: "#f3efe3", borderRadius: 999, height: 10, overflow: "hidden" }}>
-                    <div style={{ width: `${(n / monthContents.length) * 100}%`, background: s.color, height: "100%" }} />
-                  </div>
-                  <b style={{ width: 26, textAlign: "right" }}>{n}</b>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="card">
-          <div className="card-head">
-            <h2>Atividades recentes</h2>
-          </div>
+          <div className="card-head"><h2>Atividades Recentes</h2></div>
           {activity.length === 0 ? (
             <Empty title="Sem atividades ainda">
               <p className="small">As alterações da equipe aparecem aqui.</p>
@@ -228,6 +244,14 @@ export default async function DashboardPage() {
             </div>
           )}
         </section>
+      </div>
+
+      <div className="brand-card">
+        <LogoMark size={54} />
+        <div>
+          <div className="bc-name"><span>IGREJA</span> <b>RELEVANTE</b></div>
+          <div className="bc-tag">Planeje. Organize. Comunique.</div>
+        </div>
       </div>
     </>
   );

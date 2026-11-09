@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginForm({ next }: { next: string }) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +24,7 @@ export default function LoginForm({ next }: { next: string }) {
       setError(/invalid|credentials/i.test(error.message) ? "E-mail ou senha incorretos." : "Não foi possível entrar. Tente novamente.");
       return;
     }
-    router.replace(next);
-    router.refresh();
+    window.location.assign(next);
   }
 
   return (
