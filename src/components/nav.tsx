@@ -35,12 +35,12 @@ export default function Nav({ avatarUrl }: { avatarUrl: string | null }) {
   const role = profile.role_key;
 
   const items: Item[] = [
-    { href: "/", label: "Início", icon: <IconHome />, show: true },
+    { href: "/", label: "Dashboard", icon: <IconHome />, show: true },
     { href: "/calendario", label: "Calendário", icon: <IconCalendar />, show: true },
     { href: "/conteudos", label: "Conteúdos", icon: <IconDoc />, show: true },
-    { href: "/design", label: "Designers", icon: <IconBrush />, show: true },
+    { href: "/design", label: "Demandas de Design", icon: <IconBrush />, show: true },
     { href: "/arquivos", label: "Arquivos", icon: <IconFolder />, show: true },
-    { href: "/compartilhar", label: "Compartilhar", icon: <IconShare />, show: can.manageShare(role) },
+    { href: "/compartilhar", label: "Compartilhamento", icon: <IconShare />, show: can.manageShare(role) },
     { href: "/equipe", label: "Equipe", icon: <IconUsers />, show: can.manageTeam(role) },
     { href: "/configuracoes", label: "Configurações", icon: <IconSettings />, show: can.manageSettings(role) },
   ].filter((i) => i.show);
@@ -70,33 +70,7 @@ export default function Nav({ avatarUrl }: { avatarUrl: string | null }) {
             </Link>
           ))}
         </nav>
-        <div className="side-sections">
-          <div className="side-title">
-            <span>Equipe</span>
-            {can.manageTeam(role) && <Link href="/equipe" title="Adicionar pessoa">+</Link>}
-          </div>
-          <div className="mini-list">
-            {lookups.team.slice(0, 6).map((m) => (
-              <div className="mini" key={m.id}>
-                <Avatar small name={m.full_name || "?"} />
-                <span>{m.full_name || "Sem nome"}</span>
-              </div>
-            ))}
-            {lookups.team.length > 6 && <span className="mini-more">+{lookups.team.length - 6} pessoas</span>}
-          </div>
-          <div className="side-title" style={{ marginTop: 18 }}><span>Plataformas</span></div>
-          <div className="mini-list">
-            {lookups.platforms.filter((p) => p.is_active).map((p) => (
-              <div className="mini" key={p.key}>
-                <i className="dot" />
-                <span>{p.name}</span>
-              </div>
-            ))}
-          </div>
-          {can.manageTeam(role) && (
-            <Link href="/equipe" className="side-invite">Convidar pessoa</Link>
-          )}
-        </div>
+        <div className="side-spacer" />
         <div className="me">
           <Link href="/perfil" style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }} title="Meu perfil">
             <Avatar name={profile.full_name || profile.email} url={avatarUrl} />

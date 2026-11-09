@@ -67,7 +67,7 @@ export default async function DashboardPage() {
         </div>
         <div className="actions">
           <Link className="btn" href="/calendario">
-            <IconCalendar /> Abrir calendário
+            <IconCalendar /> Calendário
           </Link>
         </div>
       </div>
@@ -161,7 +161,7 @@ export default async function DashboardPage() {
         </section>
       </div>
 
-      <div className="dash-grid three">
+      <div className="dash-grid two">
         <section className="card">
           <div className="card-head"><h2>Resumo do Mês</h2></div>
           <div className="donut-wrap">
@@ -175,50 +175,6 @@ export default async function DashboardPage() {
               <li><i style={{ background: "#c9cfdf" }} />Ideias <b>{ideaN}</b></li>
             </ul>
           </div>
-        </section>
-
-        <section className="card">
-          <div className="card-head"><h2>Atrasos e prazos</h2></div>
-          {lateTotal === 0 && openDesign.filter((x) => x.due_date).length === 0 ? (
-            <Empty title="Tudo em dia">
-              <p className="small">Sem entregas atrasadas ou prazos de design à vista.</p>
-            </Empty>
-          ) : (
-            <div className="list">
-              {[...lateDesign, ...lateContent].slice(0, 4).map((x) => {
-                const isDesign = "due_date" in x;
-                const date = isDesign ? (x as DesignRequest).due_date : (x as Content).scheduled_date;
-                return (
-                  <Link key={x.id} className="list-item" href={isDesign ? "/design" : `/calendario?v=dia&d=${date}`}>
-                    <div className="grow">
-                      <div className="t">{x.title}</div>
-                      <div className="meta">
-                        <span className="late">Atrasado desde {formatDateBR(date)}</span>
-                        <span>{isDesign ? "Design" : "Publicação"}</span>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-              {openDesign
-                .filter((x) => x.due_date && x.due_date >= today)
-                .slice(0, 4)
-                .map((x) => (
-                  <Link key={x.id} className="list-item" href="/design">
-                    <div className="grow">
-                      <div className="t">{x.title}</div>
-                      <div className="meta">
-                        <span>Prazo: {formatDateBR(x.due_date)}</span>
-                        <span>Design</span>
-                      </div>
-                    </div>
-                    <Badge color={lookups.designStatuses.find((s) => s.key === x.status_key)?.color}>
-                      {lookups.designStatuses.find((s) => s.key === x.status_key)?.name}
-                    </Badge>
-                  </Link>
-                ))}
-            </div>
-          )}
         </section>
 
         <section className="card">
@@ -246,13 +202,6 @@ export default async function DashboardPage() {
         </section>
       </div>
 
-      <div className="brand-card">
-        <LogoMark size={54} />
-        <div>
-          <div className="bc-name"><span>IGREJA</span> <b>RELEVANTE</b></div>
-          <div className="bc-tag">Planeje. Organize. Comunique.</div>
-        </div>
-      </div>
     </>
   );
 }

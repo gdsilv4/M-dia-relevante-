@@ -41,14 +41,20 @@ Deno.serve(async (req) => {
       if (password.length < 8) return json({ error: "A senha temporária precisa ter pelo menos 8 caracteres." }, 400);
       if (!ROLES.includes(role)) return json({ error: "Função inválida." }, 400);
 
+      // O gatilho do banco só aceita contas com um ticket de convite criado aqui (service_role).
+      const { error: tErr } = await admin
+        .from("invite_tickets")
+        .upsert({ email, role_key: role, created_at: new Date().toISOString() });
+      if (tErr) return json({ error: "Não foi possível registrar o convite." }, 500);
+
       const { data, error } = await admin.auth.admin.createUser({
         email,
         password,
         email_confirm: true,
         user_metadata: { full_name: fullName },
-        app_metadata: { invited_by_admin: true, role_key: role },
       });
       if (error) {
+        await admin.from("invite_tickets").delete().eq("email", email);
         const msg = /already|registered|exists/i.test(error.message)
           ? "Já existe um usuário com este e-mail."
           : error.message;
